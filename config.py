@@ -27,8 +27,6 @@ BABYAPI = "http://46.250.243.52:1470"
 
 #---------------------------------------------------------------
 #---------------------------------------------------------------
-API_URL = getenv("API_URL", None) #youtube song url
-API_KEY = getenv("API_KEY", None) # youtube song api key, get it from https://t.me/RahulTC
 VIDEO_API_URL = getenv("VIDEO_API_URL", None)
 #---------------------------------------------------------------
 #---------------
