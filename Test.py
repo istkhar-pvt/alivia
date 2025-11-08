@@ -17,7 +17,7 @@ from youtubesearchpython.__future__ import VideosSearch
 
 from pytgcalls import PyTgCalls
 
-from pytgcalls.types import AudioStream
+from ntgcalls.types import AudioStream
 
 from PIL import Image, ImageDraw
 
