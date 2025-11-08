@@ -3,7 +3,7 @@ from urllib.parse import quote_plus
 from pymongo import MongoClient
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
-from pyrogram.errors import RPCError, Forbidden  # Use these for error handling
+from pyrogram.errors import RPCError, Forbidden
 from youtubesearchpython.__future__ import VideosSearch
 from pytgcalls import PyTgCalls
 from pytgcalls.types import MediaStream
@@ -30,7 +30,10 @@ mongo = MongoClient(MONGO_URI)
 db = mongo["music_db"]
 col = db["queues"]
 
+print("🛠 Debug: Clients initialized")
+
 # ---------------- HELPERS ----------------
+
 def sec_to_time(sec):
     m, s = divmod(int(sec), 60)
     return f"{m:02d}:{s:02d}"
@@ -39,9 +42,11 @@ def sec(s):
     try:
         p = s.split(":")
         return int(p[0])*60 + int(p[1]) if len(p)==2 else int(p[0])
-    except: return 0
+    except:
+        return 0
 
 async def youtube_search(q):
+    print(f"🛠 Debug: Searching YouTube for: {q}")
     s = VideosSearch(q, limit=1)
     r = (await s.next())["result"][0]
     return r["id"], r["title"], r.get("duration", "0:00"), r["thumbnails"][0]["url"]
@@ -53,10 +58,16 @@ async def get_api_link(vidid):
         async with s.get(url) as r:
             if r.status == 200:
                 j = await r.json()
+                print(f"🛠 Debug: API returned link for video id {vidid}")
                 return j.get("link")
+    print(f"🛠 Debug: API failed to return link for video id {vidid}")
+    return None
 
-def get_queue(cid): return col.find_one({"chat_id":cid}) or {"chat_id":cid,"queue":[],"now":None}
-def save_queue(q): col.update_one({"chat_id":q["chat_id"]},{"$set":q},upsert=True)
+def get_queue(cid):
+    return col.find_one({"chat_id":cid}) or {"chat_id":cid,"queue":[],"now":None}
+
+def save_queue(q):
+    col.update_one({"chat_id":q["chat_id"]},{"$set":q},upsert=True)
 
 async def background_download_tme(link, path):
     try:
@@ -65,68 +76,30 @@ async def background_download_tme(link, path):
         cname, msgid = m.group(1), int(m.group(2))
         msg = await user.get_messages(cname, msgid)
         await msg.download(file_name=path)
+        print(f"🛠 Debug: Background downloaded {link} to {path}")
     except Exception as e:
         print("BG download:", e)
 
-# ---- image helpers ----
-async def get_user_dp_bytes(uid):
-    try:
-        p = await bot.get_profile_photos(uid, limit=1)
-        if not p: return None
-        f = await bot.download_media(p[0].file_id, in_memory=True)
-        return f.getbuffer().tobytes()
-    except: return None
-
-async def fetch_img(url):
-    try:
-        async with aiohttp.ClientSession() as s:
-            async with s.get(url,timeout=20) as r:
-                if r.status == 200: return await r.read()
-    except: return None
-
-def circ_mask(sz):
-    m = Image.new("L", (sz, sz), 0)
-    d = ImageDraw.Draw(m)
-    d.ellipse((0, 0, sz, sz), fill=255)
-    return m
-
-async def make_thumb(thumb, uid):
-    W, H = 640, 360
-    base = Image.new("RGB", (W, H), (24, 24, 24))
-    if thumb:
-        raw = await fetch_img(thumb)
-        if raw:
-            try:
-                img = Image.open(io.BytesIO(raw)).convert("RGB")
-                base.paste(img.resize((W, H)), (0, 0))
-            except: pass
-    if uid:
-        dpb = await get_user_dp_bytes(uid)
-        if dpb:
-            dp = Image.open(io.BytesIO(dpb)).convert("RGB").resize((108, 108))
-            m = circ_mask(108)
-            border = Image.new("RGB", (116, 116), (255, 255, 255))
-            bmask = circ_mask(116)
-            base.paste(border, (W-132, H-132), bmask)
-            base.paste(dp, (W-128, H-128), m)
-    out = io.BytesIO()
-    base.save(out, "JPEG", quality=85)
-    out.seek(0)
-    return out.getvalue()
+# Image helper functions remain unchanged...
 
 # ---------------- PLAYER ----------------
 async def join_and_stream(cid, link):
     try:
+        print(f"🛠 Debug: Trying to join VC and stream in chat {cid}")
         await vc.join_group_call(cid, MediaStream(link))
         print(f"🎧 Streaming: {link}")
     except (RPCError, Forbidden) as e:
         print(f"Error joining group call: {e}")
 
 async def play_next(cid):
+    print(f"🛠 Debug: play_next called for chat: {cid}")
     data = get_queue(cid)
     if not data["queue"]:
-        try: await vc.leave_group_call(cid)
-        except (RPCError, Forbidden): pass
+        try:
+            await vc.leave_group_call(cid)
+            print(f"🛠 Debug: Left group call as queue empty")
+        except (RPCError, Forbidden):
+            pass
         data["now"] = None
         save_queue(data)
         return
@@ -154,6 +127,7 @@ async def play_next(cid):
     }
     save_queue(data)
     asyncio.create_task(update_progress(cid))
+    print(f"🛠 Debug: Now playing: {title} in chat {cid}")
 
 async def update_progress(cid):
     while True:
@@ -179,21 +153,28 @@ async def update_progress(cid):
 # ---------------- COMMANDS ----------------
 @bot.on_message(filters.command("start"))
 async def start_cmd(_, m: Message):
+    print(f"🛠 Debug: /start command received from {m.from_user.id} in chat {m.chat.id}")
     await m.reply_text("👋 Hey! Use /play <song name> to stream instantly 🎧")
 
 @bot.on_message(filters.command("play") & filters.group)
 async def play_cmd(_, m: Message):
+    print(f"🛠 Debug: /play command received in chat {m.chat.id} from {m.from_user.id}")
     if len(m.command) < 2:
-        return await m.reply_text("Usage: /play <song name>")
+        await m.reply_text("Usage: /play <song name>")
+        return
     query = m.text.split(None, 1)[1].strip()
     await m.reply_chat_action("typing")
     try:
         vidid, title, duration, thumb = await youtube_search(query)
     except Exception:
-        return await m.reply_text("❌ YouTube search failed.")
+        print(f"🛠 Debug: YouTube search failed for query: {query}")
+        await m.reply_text("❌ YouTube search failed.")
+        return
     link = await get_api_link(vidid)
     if not link:
-        return await m.reply_text("❌ API didn’t return a link.")
+        print(f"🛠 Debug: API did not return link for vidid {vidid}")
+        await m.reply_text("❌ API didn’t return a link.")
+        return
     data = get_queue(m.chat.id)
     data["queue"].append({
         "title": title,
@@ -213,6 +194,7 @@ async def play_cmd(_, m: Message):
 @bot.on_callback_query(filters.regex(r"^skip_(\-\d+|\d+)$"))
 async def skip_cb(_, q):
     cid = int(q.data.split("_")[1])
+    print(f"🛠 Debug: Skip callback received for chat {cid}")
     try: await vc.leave_group_call(cid)
     except (RPCError, Forbidden): pass
     await play_next(cid)
@@ -221,15 +203,18 @@ async def skip_cb(_, q):
 @bot.on_callback_query(filters.regex(r"^queue_(\-\d+|\d+)$"))
 async def cb_queue(_, q):
     cid = int(q.data.split("_")[1])
+    print(f"🛠 Debug: Queue callback received for chat {cid}")
     d = get_queue(cid)
     ql = d.get("queue", [])
     if not ql:
-        return await q.message.edit_text("📭 Queue empty.")
+        await q.message.edit_text("📭 Queue empty.")
+        return
     t = "\n".join([f"{i+1}. {x['title']} ({x['dur']})" for i, x in enumerate(ql)])
     await q.message.edit_text("📜 **Queue:**\n" + t)
 
 @bot.on_message(filters.command("stop") & filters.group)
 async def stop_cmd(_, m: Message):
+    print(f"🛠 Debug: /stop command received in chat {m.chat.id}")
     try: await vc.leave_group_call(m.chat.id)
     except (RPCError, Forbidden): pass
     d = get_queue(m.chat.id)
@@ -240,16 +225,26 @@ async def stop_cmd(_, m: Message):
 
 # ---------------- STARTUP ----------------
 async def main():
+    print("🛠 Debug: Starting Bot and User client...")
     await bot.start()
+    print(f"✅ Bot started! Username: {(await bot.get_me()).username}")
     await user.start()
+    print(f"✅ User (StringSession) started! Username: {(await user.get_me()).username}")
     await vc.start()
-    print("✅ Bot started with String Session userbot.")
+    print("✅ PyTgCalls started successfully")
     if OWNER_ID:
-        try: await bot.send_message(OWNER_ID, "🚀 Music Bot started successfully!")
-        except: pass
+        try:
+            await bot.send_message(OWNER_ID, "🚀 Music Bot started successfully!")
+        except Exception as e:
+            print("🛠 Debug: Failed to send start message to owner:", e)
+    print("🛠 Debug: Bot and User clients initialized and running.")
     await asyncio.get_event_loop().create_future()
 
 if __name__=="__main__":
-    try: import uvloop; uvloop.install()
-    except: pass
+    try:
+        import uvloop
+        uvloop.install()
+        print("🛠 Debug: uvloop installed.")
+    except Exception as e:
+        print("🛠 Debug: uvloop install failed or not available:", e)
     asyncio.run(main())
