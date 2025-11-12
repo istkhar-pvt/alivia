@@ -32,6 +32,8 @@ def cookie_txt_file():
     return cookie_file
 
 
+
+
 async def download_song(link: str):
     from BABYMUSIC import app
     pattern = re.compile(
@@ -41,35 +43,44 @@ async def download_song(link: str):
     vidid = match.group(1) if match else link
     file_path = os.path.join("downloads", f"{vidid}.mp3")
     os.makedirs("downloads", exist_ok=True)
+
+    # ✅ If already exists
     if os.path.exists(file_path):
         return file_path
+
     loop = asyncio.get_running_loop()
+
+    # ✅ Get API response
     def get_url():
         try:
-            api_url = f"{API_URL}/song?query={vidid}"
-            res = requests.get(api_url).json()
+            res = requests.get(f"{API_URL}/song?query={vidid}").json()
             return res
         except Exception as e:
             print(f"❌ API error: {e}")
             return {}
+
     response = await loop.run_in_executor(None, get_url)
     if not response:
         raise Exception("No response from API")
+
+    # ✅ CASE 1: Stream link (direct from server)
     if "stream" in response:
         stream_url = response["stream"]
         print(f"⬇️ Downloading stream: {stream_url}")
         try:
-            r = requests.get(stream_url, stream=True)
-            r.raise_for_status()
-            with open(file_path, "wb") as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    if chunk:
-                        f.write(chunk)
+            with requests.get(stream_url, stream=True) as r:
+                r.raise_for_status()
+                with open(file_path, "wb") as f:
+                    for chunk in r.iter_content(chunk_size=1024 * 64):
+                        if chunk:
+                            f.write(chunk)
             print(f"✅ Stream saved: {file_path}")
         except Exception as e:
             print(f"❌ Stream download failed: {e}")
             raise
         return file_path
+
+    # ✅ CASE 2: Telegram link (fallback)
     elif "link" in response:
         tg_link = response["link"]
         parsed = urlparse(tg_link)
@@ -82,8 +93,7 @@ async def download_song(link: str):
         print(f"✅ Downloaded from Telegram: {file_path}")
         return file_path
 
-    else:
-        raise Exception("No valid 'link' or 'stream' field in API response")
+    raise Exception("No valid 'link' or 'stream' found in API response")
 
 
 async def download_video(link: str):
@@ -95,35 +105,42 @@ async def download_video(link: str):
     vidid = match.group(1) if match else link
     file_path = os.path.join("downloads", f"{vidid}.mp4")
     os.makedirs("downloads", exist_ok=True)
+
     if os.path.exists(file_path):
         return file_path
+
     loop = asyncio.get_running_loop()
+
     def get_url():
         try:
-            api_url = f"{API_URL}/video?query={vidid}"
-            res = requests.get(api_url).json()
+            res = requests.get(f"{API_URL}/video?query={vidid}").json()
             return res
         except Exception as e:
             print(f"❌ API error: {e}")
             return {}
+
     response = await loop.run_in_executor(None, get_url)
     if not response:
         raise Exception("No response from API")
+
+    # ✅ CASE 1: Stream direct download
     if "stream" in response:
         stream_url = response["stream"]
         print(f"⬇️ Downloading stream: {stream_url}")
         try:
-            r = requests.get(stream_url, stream=True)
-            r.raise_for_status()
-            with open(file_path, "wb") as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    if chunk:
-                        f.write(chunk)
+            with requests.get(stream_url, stream=True) as r:
+                r.raise_for_status()
+                with open(file_path, "wb") as f:
+                    for chunk in r.iter_content(chunk_size=1024 * 64):
+                        if chunk:
+                            f.write(chunk)
             print(f"✅ Stream saved: {file_path}")
         except Exception as e:
             print(f"❌ Stream download failed: {e}")
             raise
         return file_path
+
+    # ✅ CASE 2: Telegram link
     elif "link" in response:
         tg_link = response["link"]
         parsed = urlparse(tg_link)
@@ -136,8 +153,7 @@ async def download_video(link: str):
         print(f"✅ Downloaded from Telegram: {file_path}")
         return file_path
 
-    else:
-        raise Exception("No valid 'link' or 'stream' field in API response")
+    raise Exception("No valid 'link' or 'stream' found in API response")
 
 
 async def check_file_size(link):
