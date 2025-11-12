@@ -66,19 +66,7 @@ async def download_song(link: str):
     # ✅ CASE 1: Stream link (direct from server)
     if "stream" in response:
         stream_url = response["stream"]
-        print(f"⬇️ Downloading stream: {stream_url}")
-        try:
-            with requests.get(stream_url, stream=True) as r:
-                r.raise_for_status()
-                with open(file_path, "wb") as f:
-                    for chunk in r.iter_content(chunk_size=1024 * 64):
-                        if chunk:
-                            f.write(chunk)
-            print(f"✅ Stream saved: {file_path}")
-        except Exception as e:
-            print(f"❌ Stream download failed: {e}")
-            raise
-        return file_path
+        return stream_url
 
     # ✅ CASE 2: Telegram link (fallback)
     elif "link" in response:
@@ -126,19 +114,7 @@ async def download_video(link: str):
     # ✅ CASE 1: Stream direct download
     if "stream" in response:
         stream_url = response["stream"]
-        print(f"⬇️ Downloading stream: {stream_url}")
-        try:
-            with requests.get(stream_url, stream=True) as r:
-                r.raise_for_status()
-                with open(file_path, "wb") as f:
-                    for chunk in r.iter_content(chunk_size=1024 * 64):
-                        if chunk:
-                            f.write(chunk)
-            print(f"✅ Stream saved: {file_path}")
-        except Exception as e:
-            print(f"❌ Stream download failed: {e}")
-            raise
-        return file_path
+        return stream_url
 
     # ✅ CASE 2: Telegram link
     elif "link" in response:
