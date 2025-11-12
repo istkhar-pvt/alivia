@@ -34,69 +34,110 @@ def cookie_txt_file():
 
 async def download_song(link: str):
     from BABYMUSIC import app
-    x = re.compile(
-        r'(?:https?://)?(?:www\.)?(?:youtube\.com/(?:watch\?v=|embed/|shorts/)|youtu\.be/)([A-Za-z0-9_-]{11})'
+    pattern = re.compile(
+        r"(?:https?://)?(?:www\.)?(?:youtube\.com/(?:watch\?v=|embed/|shorts/)|youtu\.be/)([A-Za-z0-9_-]{11})"
     )
-    video_id = x.search(link)
-    vidid = video_id.group(1) if video_id else link
-
-    xyz = os.path.join("downloads", f"{vidid}.mp3")
-    if os.path.exists(xyz):
-        return xyz
-
+    match = pattern.search(link)
+    vidid = match.group(1) if match else link
+    file_path = os.path.join("downloads", f"{vidid}.mp3")
+    os.makedirs("downloads", exist_ok=True)
+    if os.path.exists(file_path):
+        return file_path
     loop = asyncio.get_running_loop()
-
     def get_url():
-        api_url = f"{API_URL}/song?query={vidid}"
         try:
-            return requests.get(api_url).json().get("link")
-        except:
-            return None
+            api_url = f"{API_URL}/song?query={vidid}"
+            res = requests.get(api_url).json()
+            return res
+        except Exception as e:
+            print(f"❌ API error: {e}")
+            return {}
+    response = await loop.run_in_executor(None, get_url)
+    if not response:
+        raise Exception("No response from API")
+    if "stream" in response:
+        stream_url = response["stream"]
+        print(f"⬇️ Downloading stream: {stream_url}")
+        try:
+            r = requests.get(stream_url, stream=True)
+            r.raise_for_status()
+            with open(file_path, "wb") as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+            print(f"✅ Stream saved: {file_path}")
+        except Exception as e:
+            print(f"❌ Stream download failed: {e}")
+            raise
+        return file_path
+    elif "link" in response:
+        tg_link = response["link"]
+        parsed = urlparse(tg_link)
+        parts = parsed.path.strip("/").split("/")
+        cname, msgid = str(parts[0]), int(parts[1])
+        msg = await app.get_messages(cname, msgid)
+        await msg.download(file_name=file_path)
+        while not os.path.exists(file_path):
+            await asyncio.sleep(0.5)
+        print(f"✅ Downloaded from Telegram: {file_path}")
+        return file_path
 
-    download_url = await loop.run_in_executor(None, get_url)
-    parsed = urlparse(download_url)
-    parts = parsed.path.strip("/").split("/")
-    cname, msgid = str(parts[0]), int(parts[1])
-    msg = await app.get_messages(cname, msgid)
-    await msg.download(file_name=xyz)
+    else:
+        raise Exception("No valid 'link' or 'stream' field in API response")
 
-    while not os.path.exists(xyz):
-        await asyncio.sleep(0.5)
-
-    return xyz
 
 async def download_video(link: str):
     from BABYMUSIC import app
-    x = re.compile(
-        r'(?:https?://)?(?:www\.)?(?:youtube\.com/(?:watch\?v=|embed/|shorts/)|youtu\.be/)([A-Za-z0-9_-]{11})'
+    pattern = re.compile(
+        r"(?:https?://)?(?:www\.)?(?:youtube\.com/(?:watch\?v=|embed/|shorts/)|youtu\.be/)([A-Za-z0-9_-]{11})"
     )
-    video_id = x.search(link)
-    vidid = video_id.group(1) if video_id else link
-
-    xyz = os.path.join("downloads", f"{vidid}.mp4")
-    if os.path.exists(xyz):
-        return xyz
-
+    match = pattern.search(link)
+    vidid = match.group(1) if match else link
+    file_path = os.path.join("downloads", f"{vidid}.mp4")
+    os.makedirs("downloads", exist_ok=True)
+    if os.path.exists(file_path):
+        return file_path
     loop = asyncio.get_running_loop()
-
     def get_url():
-        api_url = f"{API_URL}/video?query={vidid}"
         try:
-            return requests.get(api_url).json().get("link")
-        except:
-            return None
+            api_url = f"{API_URL}/video?query={vidid}"
+            res = requests.get(api_url).json()
+            return res
+        except Exception as e:
+            print(f"❌ API error: {e}")
+            return {}
+    response = await loop.run_in_executor(None, get_url)
+    if not response:
+        raise Exception("No response from API")
+    if "stream" in response:
+        stream_url = response["stream"]
+        print(f"⬇️ Downloading stream: {stream_url}")
+        try:
+            r = requests.get(stream_url, stream=True)
+            r.raise_for_status()
+            with open(file_path, "wb") as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+            print(f"✅ Stream saved: {file_path}")
+        except Exception as e:
+            print(f"❌ Stream download failed: {e}")
+            raise
+        return file_path
+    elif "link" in response:
+        tg_link = response["link"]
+        parsed = urlparse(tg_link)
+        parts = parsed.path.strip("/").split("/")
+        cname, msgid = str(parts[0]), int(parts[1])
+        msg = await app.get_messages(cname, msgid)
+        await msg.download(file_name=file_path)
+        while not os.path.exists(file_path):
+            await asyncio.sleep(0.5)
+        print(f"✅ Downloaded from Telegram: {file_path}")
+        return file_path
 
-    download_url = await loop.run_in_executor(None, get_url)
-    parsed = urlparse(download_url)
-    parts = parsed.path.strip("/").split("/")
-    cname, msgid = str(parts[0]), int(parts[1])
-    msg = await app.get_messages(cname, msgid)
-    await msg.download(file_name=xyz)
-
-    while not os.path.exists(xyz):
-        await asyncio.sleep(0.5)
-
-    return xyz
+    else:
+        raise Exception("No valid 'link' or 'stream' field in API response")
 
 
 async def check_file_size(link):
