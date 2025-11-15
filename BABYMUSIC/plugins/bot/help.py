@@ -85,7 +85,7 @@ async def help_com_group(client, message: Message, _):
 ############################################################
 @app.on_callback_query(filters.regex("^h:") & ~BANNED_USERS)
 @languageCB
-async def helper_cb(client, CallbackQuery, _):
+async def helper_cb(_, CallbackQuery, language):
     try:
         _, key = CallbackQuery.data.split(":")
     except:
@@ -95,10 +95,12 @@ async def helper_cb(client, CallbackQuery, _):
     if not text:
         return await CallbackQuery.answer("Invalid!", show_alert=True)
 
-    keyboard = help_back_markup(_)
+    keyboard = help_back_markup(language)
+
     await CallbackQuery.edit_message_text(
         text, reply_markup=keyboard, disable_web_page_preview=True
     )
+
 
 
 ############################################################
