@@ -80,17 +80,22 @@ async def help_com_group(client, message: Message, _):
 #########################################
 # SUPER FAST HELP CALLBACK (NO IF/ELIF)
 #########################################
-@app.on_callback_query(filters.regex("^help_") & ~BANNED_USERS)
+@app.on_callback_query(filters.regex("^h:") & ~BANNED_USERS)
 @languageCB
 async def helper_cb(client, query, _):
-    key = query.data.split("_")[1]  # hb1 / hb3 ...
+try:
+_, key = query.data.split(":")
+except:
+return await query.answer("Invalid!", show_alert=True)
 
-    text = HELP_MAP.get(key)
-    if not text:
-        return await query.answer("Invalid!", show_alert=True)
 
-    keyboard = help_back_markup(_)
-    await query.edit_message_text(text, reply_markup=keyboard)
+text = HELP_MAP.get(key)
+if not text:
+return await query.answer("Invalid!", show_alert=True)
+
+
+keyboard = help_back_markup(_)
+await query.edit_message_text(text, reply_markup=keyboard, disable_web_page_preview=True)
 
 #########################################
 # MANAGE BOT CALLBACK (kept same, optimized extract)
