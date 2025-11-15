@@ -84,7 +84,7 @@ async def help_com_group(client, message: Message, _):
 # handler speed: 50ms total (max possible)
 ############################################################
 @app.on_callback_query(filters.regex("^h:") & ~BANNED_USERS)
-@LanguageStart
+@languageCB
 async def helper_cb(client, query, _):
     try:
         _, key = query.data.split(":")
@@ -142,3 +142,5 @@ async def mb_plugin_button(client, query):
         )
     else:
         await query.edit_message_text(getattr(Helper, cb), reply_markup=keyboard)
+
+
