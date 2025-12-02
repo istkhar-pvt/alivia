@@ -18,7 +18,6 @@ from BABYMUSIC.utils.database import (
     remove_active_video_chat,
 )
 from BABYMUSIC.utils.decorators.language import language
-from BABYMUSIC.utils.pastebin import PROBin
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
