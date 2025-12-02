@@ -9,10 +9,10 @@ from pyrogram import filters
 load_dotenv()
 # ------------------------------------
 # -----------------------------------------------------
-API_ID = int(getenv("API_ID", "0"))
-API_HASH = getenv("API_HASH", "0")
+API_ID = int(getenv("API_ID", "28362125"))
+API_HASH = getenv("API_HASH", "c750e5872a2af51801d9b449983f4c84")
 # ------------------------------------------------------
-BOT_TOKEN = getenv("BOT_TOKEN", "0")
+BOT_TOKEN = getenv("BOT_TOKEN", "7319023890:AAEUJPOs9zR2QH_tUI1AcWyHCpFcADd5shY")
 # -------------------------------------------------------
 OWNER_USERNAME = getenv("OWNER_USERNAME","@UTTAM470")
 # --------------------------------------------------------
@@ -30,7 +30,7 @@ API_URL = "https://BabyAPI.Pro"
 
 #---------------------------------------------------------------
 #---------------------------------------------------------------
-MONGO_DB_URI = getenv("MONGO_DB_URI", "mongodb+srv://TEAMBABY01:UTTAMRATHORE09@cluster0.vmjl9.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+MONGO_DB_URI = getenv("MONGO_DB_URI", "mongodb+srv://uffvikky88:vikky@kingvikky.qaf2s.mongodb.net/?retryWrites=true&w=majority&appName=kingvikky")
 #---------------------------------------------------------------
 #---------------------------------------------------------------
 
@@ -39,10 +39,10 @@ DURATION_LIMIT_MIN = int(getenv("DURATION_LIMIT", 17000))
 # ----------------------------------------------------------------
 
 # ----------------------------------------------------------------
-LOGGER_ID = int(getenv("LOGGER_ID", "0"))
+LOGGER_ID = int(getenv("LOGGER_ID", "-1002136457746"))
 # ----------------------------------------------------------------
 # ----------------------------------------------------------------
-OWNER_ID = int(getenv("OWNER_ID", "0"))
+OWNER_ID = int(getenv("OWNER_ID", "7980630836"))
 # -----------------------------------------------------------------
 # -----------------------------------------------------------------
 # config.py
@@ -120,7 +120,7 @@ TG_VIDEO_FILESIZE_LIMIT = int(getenv("TG_VIDEO_FILESIZE_LIMIT", "5242880000"))
 # ------------------------------------
 # ------------------------------------
 # ------------------------------------
-STRING1 = getenv("STRING_SESSION", "")
+STRING1 = getenv("STRING_SESSION", "BQHHw-sAsP9lLq3mh66FCGuJPuRD5jCCf8JfoS6sexc-nOOI4tsRFl5K4Nsh-FHEKNHuNEFv98X21smjo2Gk4nJTJgXhNpDPP6tyFZvuMCyRR5H6ySRoIp_hBjXY8VHEDrjLNb8YyQiDzqJGMobsHuA5SDXemyTNiGwrx7fjSCZ5gY7_cKjiS68pK7auceLY4hBrTCu-hSl7oJvBW5CAdKK_qvQkNbLw0u_ne2bQ9zwMhKzMrdA97JVS_D7lBy7UcB_VANnyfslQJJRk2dBMM1pRDJLidh471L6pzbOKNi0L8udn64dbwnwMgGMhcw4d4VmrKqe_thpzS67BqMDi2IeWNVEGRgAAAAHZWVHSAA")
 BANNED_USERS = filters.user()
 adminlist = {}
 lyrical = {}
